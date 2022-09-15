@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 # TODO: Doc
-def trimZeros(a: np.array):
+def trim_zeros(a):
      # get indices of all nonzero elements
     nz = np.nonzero(a)
     return a[
@@ -13,7 +13,7 @@ def trimZeros(a: np.array):
 
 
 # TODO: Doc
-def padZeros(a: np.array, size: int):
+def pad_zeros(a, size):
     dx = size - a.shape[0]
     dy = size - a.shape[1]
     dz = size - a.shape[2]
@@ -21,99 +21,98 @@ def padZeros(a: np.array, size: int):
 
 
 # TODO: Doc
-def cleanAndReindexSegmentation(segmentation: np.array, annotation: list(str)):
+def clean_segmentation(segmentation, annotation):
     structure = np.zeros_like(segmentation)
-    allowedKeywords = ['wall', 'support', 'roof', 'floor', 'base',
+    allowed_keywords = ['wall', 'support', 'roof', 'floor', 'base',
     'top', 'layer', 'bottom', 'ground', 'foundation', 'ceiling', 'column', 'pillar',
     'walkway', 'ledge', 'overhang', 'beam', 'tower', 'platform', 'nothing']
 
     # for some reason annotation lists are reversed
-    numSegments = len(annotation)
+    num_segments = len(annotation)
     for x in range(segmentation.shape[0]):
         for y in range(segmentation.shape[1]):
             for z in range(segmentation.shape[2]):
-                segmentID = segmentation[x][y][z]
-                if segmentID != 0:
-                    for keyword in allowedKeywords:
-                        if annotation[int(segmentID)].find(keyword) != -1:
+                segment_idx = segmentation[x][y][z]
+                if segment_idx != 0:
+                    for keyword in allowed_keywords:
+                        if annotation[int(segment_idx)].find(keyword) != -1:
                             # 'nothing' doesn't count
-                            structure[x,y,z] = numSegments - segmentID
+                            structure[x,y,z] = num_segments - segment_idx
     return structure
 
 
 # TODO: Doc
-def calculateMarkovTransitions(data: list((np.array, list(str)))):
+def calculate_markov_transitions(data):
     MAX_S = 12
     transitions = dict()
     segments = dict()
 
     for (structure, annotation) in data:
-        lastSegmentName = "Start"
-        for segmentId, segmentName in enumerate(annotation):
-            if segmentId == 0 or segmentId not in np.unique(structure):
+        last_segment_name = "Start"
+        for segment_idx, segment_name in enumerate(annotation):
+            if segment_idx == 0 or segment_idx not in np.unique(structure):
                 continue
 
-            segment = (structure == segmentId).astype(int)
+            segment = (structure == segment_idx).astype(int)
             #exclude tiny segments
             s0, s1, s2 = segment.shape
             if s0 < 3 and s0 < 3 and s0 < 3:
                 continue
             # clip segments which might break the output space
-            segment = trimZeros(segment)
+            segment = trim_zeros(segment)
             segment = segment[
-                0:s0 if s0 < MAX_S else MAX_S, 
+                0:s0 if s0 < MAX_S else MAX_S,
                 0:s1 if s1 < MAX_S else MAX_S,
                 0:s1 if s2 < MAX_S else MAX_S]
             # store segment in dict for generation
-            if segmentName in segments:
-                segments[segmentName].append(segment)
+            if segment_name in segments:
+                segments[segment_name].append(segment)
             else:
-                segments[segmentName] = [segment]
+                segments[segment_name] = [segment]
 
             # update transitions table
             try:
-                transitions[(lastSegmentName, segmentName)] += 1
+                transitions[(last_segment_name, segment_name)] += 1
             except:
-                transitions[(lastSegmentName, segmentName)] = 1
-            lastSegmentName = segmentName
+                transitions[(last_segment_name, segment_name)] = 1
+            last_segment_name = segment_name
 
         # store final transition
         try:
-            transitions[(lastSegmentName, 'Done')] += 1
+            transitions[(last_segment_name, 'Done')] += 1
         except:
-            transitions[(lastSegmentName, 'Done')] = 1
+            transitions[(last_segment_name, 'Done')] = 1
 
-    sourceNodes = set()
-    targetNodes = set()
+    source_nodes = set()
+    target_nodes = set()
     for (src, tgt) in transitions:
-        sourceNodes.add(src)
-        targetNodes.add(tgt)
-
-    transitionTable = pd.DataFrame(index=sourceNodes, columns=targetNodes, dtype=int)
+        source_nodes.add(src)
+        target_nodes.add(tgt)
+    transition_table = pd.DataFrame(index=source_nodes, columns=target_nodes, dtype=int)
     for key in transitions:
-        transitionTable.loc[key[0], key[1]] = transitions[key]
-    # set non-existent transitions 0 for correct random choice
-    transitionTable = transitionTable.fillna(0)
-    return transitionTable, segments
+        transition_table.loc[key[0], key[1]] = transitions[key]
+    # set non-existent transitions 0 for correctly randomized choices
+    transition_table = transition_table.fillna(0)
+    return transition_table, segments
 
 
 # TODO: Doc
-def generateAnnotation(transitionTable: pd.DataFrame, minSize: int=10):
-    options = transitionTable.columns.tolist()
+def generate_annotation(transition_table, min_size=10):
+    options = transition_table.columns.tolist()
     chain = ['Start']
     while chain[-1] != 'Done':
-        lastSegment = chain[-1]
-        transitionProbs = transitionTable.loc[lastSegment].values.flatten().tolist()
+        last_segment = chain[-1]
+        transition_probs = transition_table.loc[last_segment].values.flatten().tolist()
         # choices returns a list of length k
-        nextChoice = choices(options, weights=transitionProbs)
-        chain.append(nextChoice[0])
-    # prevent very sparse outputs
-    while len(chain) < minSize:
+        next_choice = choices(options, weights=transition_probs)
+        chain.append(next_choice[0])
+    # prevent sparse output structures
+    while len(chain) < min_size:
         chain = ['Start']
         while chain[-1] != 'Done':
-            lastSegment = chain[-1]
-            transitionProbs = transitionTable.loc[lastSegment].values.flatten().tolist()
+            last_segment = chain[-1]
+            transition_probs = transition_table.loc[last_segment].values.flatten().tolist()
             # choices returns a list of length k
-            nextChoice = choices(options, weights=transitionProbs)
-            chain.append(nextChoice[0])
+            next_choice = choices(options, weights=transition_probs)
+            chain.append(next_choice[0])
     return chain
