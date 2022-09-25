@@ -5,11 +5,10 @@ from torch import nn
 import torch.autograd as autograd
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-import numpy as np
 from tqdm import tqdm
 from numpy.random import rand
 from typing import List
-from src.utils import *
+from utils import *
 
 # ===== Wasserstein Divergence Training =====
 
@@ -22,29 +21,31 @@ def gradient_penalty(
     fake_data: Variable,
     score_fake: Variable
     ):
-    real_grad_out = Variable(FloatTensor(real_data.size(0), 1).fill_(1.0), requires_grad=False)
-    real_grad = autograd.grad(
-        score_real,
-        real_data,
-        real_grad_out, 
-        create_graph=True, 
-        retain_graph=True,
-        only_inputs=True
-    )[0]
-    real_grad_norm = real_grad.view(real_grad.size(0), -1).pow(2).sum(1) ** (P / 2)
+    real_grad_outputs = torch.full((real_data.size(0),), 1, dtype=torch.float32, requires_grad=False, device=device)
+    fake_grad_outputs = torch.full((fake_data.size(0),), 1, dtype=torch.float32, requires_grad=False, device=device)
 
-    fake_grad_out = Variable(FloatTensor(fake_data.size(0), 1).fill_(1.0), requires_grad=False)
-    fake_grad = autograd.grad(
-        score_fake,
-        fake_data,
-        fake_grad_out,
+    real_gradient = torch.autograd.grad(
+        outputs=score_real,
+        inputs=real_data,
+        grad_outputs=real_grad_outputs,
         create_graph=True,
         retain_graph=True,
-        only_inputs=True
+        only_inputs=True,
     )[0]
-    fake_grad_norm = fake_grad.view(fake_grad.size(0), -1).pow(2).sum(1) ** (P / 2)
+    fake_gradient = torch.autograd.grad(
+        outputs=score_fake,
+        inputs=fake_data,
+        grad_outputs=fake_grad_outputs,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
 
-    return torch.mean(real_grad_norm + fake_grad_norm) * K / 2
+    real_gradient_norm = real_gradient.view(real_gradient.size(0), -1).pow(2).sum(1) ** (P / 2)
+    fake_gradient_norm = fake_gradient.view(fake_gradient.size(0), -1).pow(2).sum(1) ** (P / 2)
+
+    gradient_penalty = torch.mean(real_gradient_norm + fake_gradient_norm) * K / 2
+    return gradient_penalty
 
 # constant for generator update
 TRAIN_G_EVERY = 5
@@ -62,13 +63,13 @@ def wgan_div_epoch(
     ):
     for i, real_data in enumerate(tqdm(dataloader)):
         batch_size = real_data.size(0)
-        real_data = real_data.to(device)
         
         # train discriminator (critic)
         d_optim.zero_grad()
 
         noise = latent_vector(batch_size, noise_dim)
-        real_data = Variable(torch.FloatTensor(real_data.size()), requires_grad=True)
+        real_data = Variable(real_data[0].type(FloatTensor), requires_grad=True)
+        real_data = real_data.to(device)
         fake_data = generator(noise)
 
         score_real = discriminator(real_data)
@@ -80,8 +81,8 @@ def wgan_div_epoch(
             fake_data,
             score_fake)
 
-        d_loss = torch.mean(score_fake) - torch.mean(score_real) + grad_penalty
-        epoch_d_losses.append(score_fake.mean().item() - score_real.mean().item())
+        d_loss = torch.mean(score_real) - torch.mean(score_fake) + grad_penalty
+        epoch_d_losses.append(score_real.mean().item() - score_fake.mean().item())
         
         d_loss.backward()
         d_optim.step()
@@ -91,7 +92,7 @@ def wgan_div_epoch(
             noise = latent_vector(batch_size, noise_dim).to(device)
             fakes = generator(noise)
             score_fake = discriminator(fakes)
-            g_loss = -torch.mean(score_fake)
+            g_loss = torch.mean(score_fake)
             epoch_adv_losses += score_fake.mean().item()
 
             g_optim.zero_grad()
