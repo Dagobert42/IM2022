@@ -2,3 +2,5 @@
 __pycache__
 *.png
 dataset/output
+*.pth
+models/logs/

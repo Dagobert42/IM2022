@@ -24,7 +24,7 @@ def start_training(
         batch_size=batch_size,
         shuffle=True
         )
-    model_uid = model_type + datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+    model_uid = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
     model_save_path = dir + '/content/' + model_uid
     print("Using device: ", device)
 
@@ -52,7 +52,7 @@ def start_training(
         real_accs = []
         fake_accs = []
 
-        wgan_div_epoch(
+        wgan_gp_epoch(
             dataloader,
             generator,
             discriminator,
