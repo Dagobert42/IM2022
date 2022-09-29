@@ -15,7 +15,7 @@ FLIP_CHANCE = 1.05
 NOISE_LEVEL = 0.4
 OFFSET = 0.8
 
-def dcgan_epoch(
+def max_log_d_epoch(
     dataloader: DataLoader,
     generator: nn.Module,
     discriminator: nn.Module,
@@ -23,7 +23,6 @@ def dcgan_epoch(
     d_optim: optim.Adam,
     criterion: nn.BCELoss,
     noise_dim: int,
-    device: torch.device,
     epoch_adv_loss: float,
     epoch_d_loss: float,
     real_accs: List,

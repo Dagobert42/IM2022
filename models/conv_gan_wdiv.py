@@ -21,7 +21,7 @@ class ConvGenerator(torch.nn.Module):
         self.feature_dim = feature_dim
 
         self.deconv1 = deconv_layer(self.noise_dim, self.feature_dim*8)
-        self.deconv2 = deconv_layer(self.feature_dim*8, self.feature_dim*4, stride=1)
+        self.deconv2 = deconv_layer(self.feature_dim*8, self.feature_dim*4)
         self.deconv3 = deconv_layer(self.feature_dim*4, self.feature_dim*2)
         self.deconv4 = deconv_layer(self.feature_dim*2, self.feature_dim)
         
@@ -56,7 +56,7 @@ class ConvDiscriminator(torch.nn.Module):
         self.conv1 = conv_layer(1, self.feature_dim)
         self.conv2 = conv_layer(self.feature_dim, self.feature_dim*2)
         self.conv3 = conv_layer(self.feature_dim*2, self.feature_dim*4)
-        self.conv4 = conv_layer(self.feature_dim*4, self.feature_dim*8, stride=1)
+        self.conv4 = conv_layer(self.feature_dim*4, self.feature_dim*8)
         self.conv5 = torch.nn.Conv3d(
             self.feature_dim*8, 1, kernel_size=4, stride=2, bias=False, padding=(1,1,1))
 

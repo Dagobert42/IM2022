@@ -6,7 +6,8 @@ import datetime
 import time
 import pickle5 as pickle
 from utils import *
-from w_div import *
+from max_log_d import *
+from w_gp import *
 
 def start_training(
     generator: nn.Module,
@@ -25,7 +26,7 @@ def start_training(
         shuffle=True
         )
     model_uid = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-    model_save_path = dir + '/content/' + model_uid
+    model_save_path = dir + "/" + model_uid
     print("Using device: ", device)
 
     generator.to(device)
@@ -52,7 +53,7 @@ def start_training(
         real_accs = []
         fake_accs = []
 
-        wgan_gp_epoch(
+        max_log_d_epoch(
             dataloader,
             generator,
             discriminator,
@@ -93,14 +94,23 @@ def start_training(
             )
         print('Elapsed Time: {:.4} min'.format(epoch_time / 60.0))
 
-        if epoch % 10 == 0:
+        if epoch % 25 == 0:
             # number of noise distributions to generate
             # equals the number generated of outputs
             NUM_SAMPLES = 4
             x = latent_vector(NUM_SAMPLES, noise_dim)
             samples = generator(x).cpu().data[:NUM_SAMPLES].squeeze().numpy()
             samples = samples * 0.5 + 0.5
-            save_sample(samples, dir + '/content/', epoch)
+            save_sample(samples, dir, epoch)
+            log = {
+                "dl": d_losses,
+                "al": adv_losses,
+                "ra": epoch_real_accs,
+                "fa": epoch_fake_accs,
+                "ma": epoch_mean_accs,
+                }
+            with open(model_save_path + '_log.pkl', 'wb') as f:
+                pickle.dump(log, f, protocol=pickle.DEFAULT_PROTOCOL)
 
     torch.save(generator.state_dict(), dir + model_save_path + '_G.pth')
     torch.save(discriminator.state_dict(), dir + model_save_path + '_D.pth')
@@ -111,6 +121,6 @@ def start_training(
         "fa": epoch_fake_accs,
         "ma": epoch_mean_accs,
         }
-    with open(dir + '/content/'+ model_uid + '_log.pkl', 'wb') as f:
+    with open(model_save_path + '_log.pkl', 'wb') as f:
         pickle.dump(log, f, protocol=pickle.DEFAULT_PROTOCOL)
     print('Models and training statistics saved...')

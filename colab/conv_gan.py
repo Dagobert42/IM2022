@@ -20,12 +20,11 @@ class ConvGenerator(torch.nn.Module):
         self.noise_dim = noise_dim
         self.feature_dim = feature_dim
 
-        self.deconv1 = deconv_layer(self.noise_dim, self.feature_dim*8)
-        self.deconv2 = deconv_layer(self.feature_dim*8, self.feature_dim*4, stride=1)
-        self.deconv3 = deconv_layer(self.feature_dim*4, self.feature_dim*2)
-        self.deconv4 = deconv_layer(self.feature_dim*2, self.feature_dim)
+        self.deconv1 = deconv_layer(self.noise_dim, self.feature_dim*4)
+        self.deconv2 = deconv_layer(self.feature_dim*4, self.feature_dim*2)
+        self.deconv3 = deconv_layer(self.feature_dim*2, self.feature_dim)
         
-        self.deconv5 = torch.nn.Sequential(
+        self.deconv4 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(self.feature_dim, 1, kernel_size=4, stride=2, bias=False, padding=(1,1,1)),
             torch.nn.Tanh())
         
@@ -37,7 +36,6 @@ class ConvGenerator(torch.nn.Module):
         out = self.deconv2(out)
         out = self.deconv3(out)
         out = self.deconv4(out)
-        out = self.deconv5(out)
         out = torch.squeeze(out)
         return out
 
@@ -57,10 +55,9 @@ class ConvDiscriminator(torch.nn.Module):
         self.conv1 = conv_layer(1, self.feature_dim)
         self.conv2 = conv_layer(self.feature_dim, self.feature_dim*2)
         self.conv3 = conv_layer(self.feature_dim*2, self.feature_dim*4)
-        self.conv4 = conv_layer(self.feature_dim*4, self.feature_dim*8, stride=1)
 
-        self.conv5 = torch.nn.Sequential(
-            torch.nn.Conv3d(self.feature_dim*8, 1, kernel_size=4, stride=2, bias=False, padding=(1,1,1)),
+        self.conv4 = torch.nn.Sequential(
+            torch.nn.Conv3d(self.feature_dim*4, 1, kernel_size=4, stride=2, bias=False, padding=(1,1,1)),
             torch.nn.Sigmoid()
         )
 
@@ -72,6 +69,5 @@ class ConvDiscriminator(torch.nn.Module):
         out = self.conv2(out)
         out = self.conv3(out)
         out = self.conv4(out)
-        out = self.conv5(out)
         out = torch.squeeze(out)
         return out
