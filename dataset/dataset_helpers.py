@@ -48,6 +48,7 @@ def calculate_markov_transitions(data):
     segments = dict()
 
     for (structure, annotation) in data:
+        segment_uid = 0
         last_segment_name = "Start"
         for segment_idx, segment_name in enumerate(annotation):
             if segment_idx == 0 or segment_idx not in np.unique(structure):
@@ -56,19 +57,20 @@ def calculate_markov_transitions(data):
             segment = (structure == segment_idx).astype(int)
             #exclude tiny segments
             s0, s1, s2 = segment.shape
-            if s0 < 3 and s0 < 3 and s0 < 3:
+            if s0 < 3 and s1 < 3 and s2 < 3:
                 continue
             # clip segments which might break the output space
             segment = trim_zeros(segment)
             segment = segment[
                 0:s0 if s0 < MAX_S else MAX_S,
                 0:s1 if s1 < MAX_S else MAX_S,
-                0:s1 if s2 < MAX_S else MAX_S]
+                0:s2 if s2 < MAX_S else MAX_S]
             # store segment in dict for generation
             if segment_name in segments:
-                segments[segment_name].append(segment)
+                segments[segment_name].append((segment, segment_uid))
             else:
-                segments[segment_name] = [segment]
+                segments[segment_name] = [(segment, segment_uid)]
+            segment_uid += 1
 
             # update transitions table
             try:
@@ -97,17 +99,17 @@ def calculate_markov_transitions(data):
 
 
 # TODO: Doc
-def generate_annotation(transition_table, min_size=10):
+def generate_annotation(transition_table, min_size=10, max_size=34):
     options = transition_table.columns.tolist()
     chain = ['Start']
     while chain[-1] != 'Done':
         last_segment = chain[-1]
         transition_probs = transition_table.loc[last_segment].values.flatten().tolist()
-        # choices returns a list of length k
         next_choice = choices(options, weights=transition_probs)
+        # choices returns a list of length k
         chain.append(next_choice[0])
     # prevent sparse output structures
-    while len(chain) < min_size:
+    while len(chain) < min_size or len(chain) > max_size:
         chain = ['Start']
         while chain[-1] != 'Done':
             last_segment = chain[-1]
