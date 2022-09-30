@@ -31,10 +31,9 @@ def save_sample(samples, path, epoch):
     plt.rcParams['figure.dpi'] = 300
     plt.rcParams['savefig.dpi'] = 300
     for i, sample in enumerate(samples):
-        sample = np.sqrt(sample)
         x, y, z = sample.nonzero()
         ax = plt.subplot(gs[i], projection='3d')
-        ax.scatter(x, y, z, zdir='z', c=sample[x,y,z], cmap='turbo', marker="h", alpha=0.8, linewidth=0.)
+        ax.scatter(x, y, z, zdir='z', c=sample[x,y,z], cmap='jet', marker="h", alpha=0.8, linewidth=0.)
         ax.axis('off')
     plt.savefig(path + '/sample_@epoch{}.png'.format(str(epoch)))
     plt.close()
