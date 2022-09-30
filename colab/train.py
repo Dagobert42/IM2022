@@ -15,6 +15,7 @@ def start_training(
     data_path: str,
     learning_rate: float,
     n_epochs: float,
+    t: str,
     batch_size: int,
     noise_dim: int
     ):
@@ -38,6 +39,8 @@ def start_training(
     discriminator.train()
     generator.train()
 
+    criterion = nn.BCELoss()
+
     # track performance measures for analysis
     d_losses = []
     adv_losses = []
@@ -53,18 +56,34 @@ def start_training(
         real_accs = []
         fake_accs = []
 
-        max_log_d_epoch(
-            dataloader,
-            generator,
-            discriminator,
-            g_optim,
-            d_optim,
-            noise_dim,
-            epoch_adv_losses,
-            epoch_d_losses,
-            real_accs,
-            fake_accs
-            )
+        if t == "log_d":
+            max_log_d_epoch(
+                dataloader,
+                generator,
+                discriminator,
+                g_optim,
+                d_optim,
+                criterion,
+                noise_dim,
+                epoch_adv_losses,
+                epoch_d_losses,
+                real_accs,
+                fake_accs
+                )
+
+        if t == "w_gp":
+            wgan_gp_epoch(
+                dataloader,
+                generator,
+                discriminator,
+                g_optim,
+                d_optim,
+                noise_dim,
+                epoch_adv_losses,
+                epoch_d_losses,
+                real_accs,
+                fake_accs
+                )
             
         # chart losses
         epoch_d_loss = sum(epoch_d_losses) / len(dataset)

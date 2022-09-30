@@ -38,8 +38,8 @@ def max_log_d_epoch(
         fake_labels = rand(batch_size).astype(np.float32) * NOISE_LEVEL
         real_labels -= flips
         fake_labels += flips
-        real_labels = torch.from_numpy(real_data).to(device)
-        fake_labels = torch.from_numpy(fake_data).to(device)
+        real_labels = torch.from_numpy(real_labels).to(device)
+        fake_labels = torch.from_numpy(fake_labels).to(device)
 
         # train generator
         noise = latent_vector(batch_size, noise_dim)
@@ -47,7 +47,7 @@ def max_log_d_epoch(
         predict_fake = discriminator(fake_data)
 
         g_adv_loss = criterion(predict_fake, real_labels)
-        epoch_adv_loss += g_adv_loss
+        epoch_adv_loss.append(g_adv_loss)
 
         g_optim.zero_grad()
         g_adv_loss.backward()
@@ -64,7 +64,7 @@ def max_log_d_epoch(
         real_loss = criterion(predict_real, real_labels)
         fake_loss = criterion(predict_fake, fake_labels)
         d_loss = (real_loss + fake_loss) / 2
-        epoch_d_loss += d_loss
+        epoch_d_loss.append(d_loss)
 
         d_optim.zero_grad()
         d_loss.backward()
