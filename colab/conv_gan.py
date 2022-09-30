@@ -26,7 +26,8 @@ class ConvGenerator(torch.nn.Module):
         
         self.deconv4 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(self.feature_dim, 1, kernel_size=4, stride=2, bias=False, padding=(1,1,1)),
-            torch.nn.Tanh())
+            torch.nn.Sigmoid()
+            )
         
         self.apply(init_weights)
 
