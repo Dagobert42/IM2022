@@ -36,7 +36,7 @@ def start_training(
 
     g_optim = optim.Adam(generator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
     d_optim = optim.Adam(discriminator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
-    d_scheduler = MultiStepLR(d_optim, milestones=[10, 25, 50, 100], gamme=0.5)
+    d_scheduler = MultiStepLR(d_optim, milestones=[10, 25, 50, 100], gamma=0.5)
     
     discriminator.train()
     generator.train()
