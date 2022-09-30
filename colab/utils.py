@@ -33,7 +33,8 @@ def save_sample(samples, path, epoch):
     for i, sample in enumerate(samples):
         x, y, z = sample.nonzero()
         ax = plt.subplot(gs[i], projection='3d')
-        ax.scatter(x, y, z, zdir='z', c=sample[x,y,z], cmap='jet', marker="h", alpha=0.8, linewidth=0.)
+        # y is the height dim in Minetest
+        ax.scatter(x, z, y, zdir='z', c=sample[x,y,z], cmap='jet', marker="h", alpha=0.8, linewidth=0.)
         ax.axis('off')
     plt.savefig(path + '/sample_@epoch{}.png'.format(str(epoch)))
     plt.close()
