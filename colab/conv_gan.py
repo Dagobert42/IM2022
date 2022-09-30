@@ -43,7 +43,7 @@ def conv_layer(in_dim, out_dim, stride=2):
     return torch.nn.Sequential(
         torch.nn.Conv3d(in_dim, out_dim, kernel_size=4, stride=stride, bias=False, padding=(1,1,1)),
         torch.nn.BatchNorm3d(out_dim),
-        torch.nn.Dropout3d(0.3, inplace=True),
+        torch.nn.Dropout3d(0.5, inplace=True),
         torch.nn.LeakyReLU(0.2, inplace=True))
 
 class ConvDiscriminator(torch.nn.Module):

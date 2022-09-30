@@ -66,12 +66,17 @@ def max_log_d_epoch(
         d_loss = (real_loss + fake_loss) / 2
         epoch_d_loss.append(d_loss)
 
-        d_optim.zero_grad()
-        d_loss.backward()
-        d_optim.step()
-        
         # track accuracies
         d_real_acc = torch.ge(predict_real.squeeze(), 0.5).float()
         real_accs.append(d_real_acc.mean().item())
         d_fake_acc = torch.lt(predict_fake.squeeze(), 0.5).float()
         fake_accs.append(d_fake_acc.mean().item())
+
+        epoch_real_acc = sum(real_accs) / len(real_accs)
+        epoch_fake_acc = sum(fake_accs) / len(fake_accs)
+
+        # avoid training the discriminator too much
+        if (epoch_real_acc + epoch_fake_acc) / 2 < 0.9:
+            d_optim.zero_grad()
+            d_loss.backward()
+            d_optim.step()
