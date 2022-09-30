@@ -30,7 +30,6 @@ def max_log_d_epoch(
 
     for real_data in tqdm(dataloader):
         batch_size = real_data.size(0)
-        real_data = real_data.to(device)
 
         # prepare labels
         flips = np.floor(rand(batch_size) * FLIP_CHANCE) * OFFSET
@@ -47,14 +46,13 @@ def max_log_d_epoch(
         predict_fake = discriminator(fake_data)
 
         g_adv_loss = criterion(predict_fake, real_labels)
-        epoch_adv_loss.append(g_adv_loss)
+        epoch_adv_loss.append(g_adv_loss.item())
 
         g_optim.zero_grad()
         g_adv_loss.backward()
         g_optim.step()
         
         # train discriminator
-        real_data = real_data.to(device)
         predict_real = discriminator(real_data)
 
         noise = latent_vector(batch_size, noise_dim)
@@ -64,7 +62,7 @@ def max_log_d_epoch(
         real_loss = criterion(predict_real, real_labels)
         fake_loss = criterion(predict_fake, fake_labels)
         d_loss = (real_loss + fake_loss) / 2
-        epoch_d_loss.append(d_loss)
+        epoch_d_loss.append(d_loss.item())
 
         # track accuracies
         d_real_acc = torch.ge(predict_real.squeeze(), 0.5).float()
