@@ -121,7 +121,6 @@ def start_training(
             NUM_SAMPLES = 4
             x = latent_vector(NUM_SAMPLES, noise_dim)
             samples = generator(x).cpu().data[:NUM_SAMPLES].squeeze().numpy()
-            samples = samples * 0.5 + 0.5
             save_sample(samples, dir, epoch)
             log = {
                 "dl": d_losses,
