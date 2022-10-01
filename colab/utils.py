@@ -24,7 +24,7 @@ class ArtificialStructuresDataset(data.Dataset):
     def __len__(self):
         return len(self.data)
 
-def save_sample(samples, path, epoch):
+def save_samples(samples, path, epoch):
     plt.figure(figsize=(8, 4))
     gs = gridspec.GridSpec(1, 4)
     gs.update(wspace=0.05, hspace=0.05)

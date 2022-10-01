@@ -9,6 +9,7 @@ import pickle5 as pickle
 from utils import *
 from max_log_d import *
 from w_gp import *
+from google.colab import files
 
 def start_training(
     generator: nn.Module,
@@ -121,7 +122,8 @@ def start_training(
             NUM_SAMPLES = 4
             x = latent_vector(NUM_SAMPLES, noise_dim)
             samples = generator(x).cpu().data[:NUM_SAMPLES].squeeze().numpy()
-            save_sample(samples, dir, epoch)
+            samples = np.fix(samples * 32.0)
+            save_samples(samples, dir, epoch)
             log = {
                 "dl": d_losses,
                 "al": adv_losses,
@@ -134,8 +136,8 @@ def start_training(
         
         d_scheduler.step()
 
-    torch.save(generator.state_dict(), dir + model_save_path + '_G.pth')
-    torch.save(discriminator.state_dict(), dir + model_save_path + '_D.pth')
+    torch.save(generator.state_dict(), model_save_path + '_G.pth')
+    torch.save(discriminator.state_dict(), model_save_path + '_D.pth')
     log = {
         "dl": d_losses,
         "al": adv_losses,
@@ -146,3 +148,7 @@ def start_training(
     with open(model_save_path + '_log.pkl', 'wb') as f:
         pickle.dump(log, f, protocol=pickle.DEFAULT_PROTOCOL)
     print('Models and training statistics saved...')
+
+    files.download(model_save_path + '_G.pth')
+    files.download(model_save_path + '_D.pth')
+    files.download(model_save_path + '_log.pkl')
