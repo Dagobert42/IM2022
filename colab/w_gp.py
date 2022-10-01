@@ -34,6 +34,7 @@ def gradient_penalty(discriminator, real_data, fake_data):
 
     return ((gradients.norm(2, dim=1) - 1) ** 2).mean() * LAMBDA
 
+TRAIN_G_EVERY = 5
 def wgan_gp_epoch(
     dataloader: DataLoader,
     generator: nn.Module,
@@ -46,46 +47,39 @@ def wgan_gp_epoch(
     real_accs: List,
     fake_accs: List
     ):
-    one = torch.tensor(1, dtype=torch.float).to(device)
-    negative_one = one * -1
-    for real_data in tqdm(dataloader):
+    for i, real_data in enumerate(tqdm(dataloader)):
         batch_size = real_data.size(0)
 
-        real_data = Variable(real_data.to(device))
-
-        d_optim.zero_grad()
-        g_optim.zero_grad()
-
         # train discriminator
+        real_data = Variable(real_data)
         predict_real = discriminator(real_data)
-        predict_real_mean = predict_real.mean()
-        predict_real_mean.backward(negative_one)
 
         noise = latent_vector(batch_size, noise_dim)
         fake_data = generator(noise)
-
         predict_fake = discriminator(fake_data)
-        predict_fake_mean = predict_fake.mean()
-        predict_fake_mean.backward(one)
         
         gp = gradient_penalty(discriminator, real_data.data, fake_data.data)
-        gp.backward()
+        d_loss = torch.mean(predict_fake) - torch.mean(predict_real) + gp
         # wasserstein_distance = predict_real - predict_fake
-        epoch_d_losses.append(predict_fake_mean.item() - predict_real_mean.item())
+        epoch_d_losses.append(predict_fake.mean().item() - predict_real.mean().item())
         
         d_optim.zero_grad()
+        d_loss.backward()
         d_optim.step()
         
-        # train generator
-        noise = latent_vector(batch_size, noise_dim)
-        fake_data = generator(noise)
 
-        predict_fake = discriminator(fake_data)
-        predict_fake_mean = predict_fake.mean()
-        predict_fake_mean.backward(negative_one)
-        epoch_adv_losses.append(predict_fake_mean.item())
+        g_optim.zero_grad()
+        if i % TRAIN_G_EVERY == 0:
+            # train generator
+            noise = latent_vector(batch_size, noise_dim)
+            fake_data = generator(noise)
 
-        g_optim.step()
+            predict_fake = discriminator(fake_data)
+            g_adv_loss = -torch.mean(predict_fake)
+            epoch_adv_losses.append(predict_fake.mean().item())
+
+            g_adv_loss.backward()
+            g_optim.step()
 
         # track accuracies
         d_real_acc = torch.ge(predict_real.squeeze(), 0.5).float()
