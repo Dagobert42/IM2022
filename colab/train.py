@@ -37,7 +37,9 @@ def start_training(
 
     g_optim = optim.Adam(generator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
     d_optim = optim.Adam(discriminator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
-    d_scheduler = MultiStepLR(d_optim, milestones=[10, 25, 50, 100], gamma=0.5)
+    
+    if t == "log_d":
+        d_scheduler = MultiStepLR(d_optim, milestones=[10, 25, 50, 100], gamma=0.5)
     
     discriminator.train()
     generator.train()
@@ -134,7 +136,8 @@ def start_training(
             with open(model_save_path + '_log.pkl', 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.DEFAULT_PROTOCOL)
         
-        d_scheduler.step()
+        if t == "log_d":
+            d_scheduler.step()
 
     torch.save(generator.state_dict(), model_save_path + '_G.pth')
     torch.save(discriminator.state_dict(), model_save_path + '_D.pth')

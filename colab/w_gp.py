@@ -4,6 +4,7 @@ from torch import nn
 import torch.autograd as autograd
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 from tqdm import tqdm
 from typing import List
 from utils import *
@@ -12,26 +13,13 @@ from utils import *
 
 # constants for Wasserstein gradient penalty
 LAMBDA = 10.0
-def gradient_penalty(discriminator, real_data, fake_data):
-    # random weight term for interpolation between real and fake samples
-    alpha = torch.rand((real_data.size(0), 1, 1, 1), dtype=torch.float).to(device)
-
-    # random interpolation between real and fake samples
-    interpolates = alpha * real_data + ((1 - alpha) * fake_data).to(device)
-    interpolates = Variable(interpolates, requires_grad=True)
-
-    score_interpolates = discriminator(interpolates)
-
-    # gradient over interpolates
-    grad_out = torch.ones(score_interpolates.size()).to(device)
-    gradients = autograd.grad(
-        outputs=score_interpolates,
-        inputs=interpolates,
-        grad_outputs=grad_out,
-        create_graph=True,
-        retain_graph=True,
-        only_inputs=True)[0]
-
+def gradient_penalty(discriminator, real_data, predict_real):
+    gradients, *_ = autograd.grad(outputs=predict_real,
+        inputs=real_data,
+        grad_outputs=torch.ones_like(predict_real),
+        create_graph=True
+        )
+    gradients = gradients.reshape(real_data.size(0), -1)
     return ((gradients.norm(2, dim=1) - 1) ** 2).mean() * LAMBDA
 
 TRAIN_G_EVERY = 5
@@ -51,23 +39,22 @@ def wgan_gp_epoch(
         batch_size = real_data.size(0)
 
         # train discriminator
-        real_data = Variable(real_data)
         predict_real = discriminator(real_data)
+        d_real_loss = F.relu(1 - predict_real).mean()
 
         noise = latent_vector(batch_size, noise_dim)
-        fake_data = generator(noise)
+        fake_data = generator(noise).data
         predict_fake = discriminator(fake_data)
+        d_fake_loss = F.relu(1 + predict_fake).mean()
         
         gp = gradient_penalty(discriminator, real_data.data, fake_data.data)
-        d_loss = torch.mean(predict_fake) - torch.mean(predict_real) + gp
-        # wasserstein_distance = predict_real - predict_fake
-        epoch_d_losses.append(predict_fake.mean().item() - predict_real.mean().item())
+        d_loss = d_real_loss + d_fake_loss + gp
+        epoch_d_losses.append(d_real_loss.item() + d_fake_loss.item())
         
         d_optim.zero_grad()
         d_loss.backward()
         d_optim.step()
         
-
         g_optim.zero_grad()
         if i % TRAIN_G_EVERY == 0:
             # train generator
@@ -75,8 +62,8 @@ def wgan_gp_epoch(
             fake_data = generator(noise)
 
             predict_fake = discriminator(fake_data)
-            g_adv_loss = -torch.mean(predict_fake)
-            epoch_adv_losses.append(predict_fake.mean().item())
+            g_adv_loss = -predict_fake.mean()
+            epoch_adv_losses.append(-predict_fake.mean().item())
 
             g_adv_loss.backward()
             g_optim.step()
