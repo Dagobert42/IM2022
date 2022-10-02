@@ -38,7 +38,7 @@ def wgan_gp_epoch(
     for i, real_data in enumerate(tqdm(dataloader)):
         batch_size = real_data.size(0)
 
-        real_data.requires_grad(True)
+        real_data.requires_grad_()
         # train discriminator
         predict_real = discriminator(real_data)
         d_real_loss = F.relu(1 - predict_real).mean()
