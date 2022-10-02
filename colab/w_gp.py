@@ -13,7 +13,7 @@ from utils import *
 
 # constants for Wasserstein gradient penalty
 LAMBDA = 10.0
-def gradient_penalty(discriminator, real_data, predict_real):
+def gradient_penalty(real_data, predict_real):
     gradients, *_ = autograd.grad(outputs=predict_real,
         inputs=real_data,
         grad_outputs=torch.ones_like(predict_real),
@@ -38,16 +38,17 @@ def wgan_gp_epoch(
     for i, real_data in enumerate(tqdm(dataloader)):
         batch_size = real_data.size(0)
 
+        real_data.requires_grad()
         # train discriminator
         predict_real = discriminator(real_data)
         d_real_loss = F.relu(1 - predict_real).mean()
 
         noise = latent_vector(batch_size, noise_dim)
-        fake_data = generator(noise).data
-        predict_fake = discriminator(fake_data)
+        fake_data = generator(noise)
+        predict_fake = discriminator(fake_data.detach())
         d_fake_loss = F.relu(1 + predict_fake).mean()
         
-        gp = gradient_penalty(discriminator, real_data.data, fake_data.data)
+        gp = gradient_penalty(real_data, predict_real)
         d_loss = d_real_loss + d_fake_loss + gp
         epoch_d_losses.append(d_real_loss.item() + d_fake_loss.item())
         
