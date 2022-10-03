@@ -9,18 +9,18 @@ def init_weights(layer):
         layer.bias.data.zero_()
 
 def deconv_layer(in_dim, out_dim):
-    return torch.nn.Sequential(
-        torch.nn.ConvTranspose3d(
+    return nn.Sequential(
+        nn.ConvTranspose3d(
             in_dim,
             out_dim,
             kernel_size=4,
             stride=2,
             bias=False,
             padding=(1,1,1)),
-        torch.nn.BatchNorm3d(out_dim),
-        torch.nn.ReLU(inplace=True))
+        nn.BatchNorm3d(out_dim),
+        nn.ReLU(inplace=True))
 
-class ConvGenerator(torch.nn.Module):
+class ConvGenerator(nn.Module):
     def __init__(self, noise_dim, feature_dim):
         super(ConvGenerator, self).__init__()
         self.noise_dim = noise_dim
@@ -30,15 +30,15 @@ class ConvGenerator(torch.nn.Module):
         self.deconv2 = deconv_layer(self.feature_dim*4, self.feature_dim*2)
         self.deconv3 = deconv_layer(self.feature_dim*2, self.feature_dim)
         
-        self.deconv4 = torch.nn.Sequential(
-            torch.nn.ConvTranspose3d(
+        self.deconv4 = nn.Sequential(
+            nn.ConvTranspose3d(
                 self.feature_dim,
                 1,
                 kernel_size=4,
                 stride=2,
                 bias=False,
                 padding=(1,1,1)),
-            torch.nn.Sigmoid())
+            nn.Sigmoid())
         
         self.apply(init_weights)
 
@@ -52,20 +52,20 @@ class ConvGenerator(torch.nn.Module):
         return out
 
 def conv_layer(in_dim, out_dim):
-    return torch.nn.Sequential(
-        torch.nn.Conv3d(
+    return nn.Sequential(
+        nn.Conv3d(
             in_dim,
             out_dim,
             kernel_size=4,
             stride=2,
             bias=False,
             padding=(1,1,1)),
-            
-        torch.nn.BatchNorm3d(out_dim),
-        torch.nn.Dropout3d(0.5, inplace=True),
-        torch.nn.LeakyReLU(0.2, inplace=True))
 
-class ConvDiscriminator(torch.nn.Module):
+        nn.BatchNorm3d(out_dim),
+        nn.Dropout3d(0.5, inplace=True),
+        nn.LeakyReLU(0.2, inplace=True))
+
+class ConvDiscriminator(nn.Module):
     def __init__(self, feature_dim, output_shape):
         super(ConvDiscriminator, self).__init__()
         self.feature_dim = feature_dim
@@ -75,15 +75,15 @@ class ConvDiscriminator(torch.nn.Module):
         self.conv2 = conv_layer(self.feature_dim, self.feature_dim*2)
         self.conv3 = conv_layer(self.feature_dim*2, self.feature_dim*4)
 
-        self.conv4 = torch.nn.Sequential(
-            torch.nn.Conv3d(
+        self.conv4 = nn.Sequential(
+            nn.Conv3d(
                 self.feature_dim*4,
                 1,
                 kernel_size=4,
                 stride=2,
                 bias=False,
                 padding=(1,1,1)),
-            torch.nn.Sigmoid()
+            nn.Sigmoid()
         )
 
         self.apply(init_weights)
