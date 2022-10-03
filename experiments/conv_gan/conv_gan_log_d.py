@@ -1,12 +1,6 @@
 import torch
 from torch import nn
-
-def init_weights(layer):
-    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d) :
-        layer.weight.data.normal_(0.0, 0.02)
-    elif isinstance(layer, nn.BatchNorm3d):
-        layer.weight.data.normal_(1.0, 0.02)
-        layer.bias.data.zero_()
+from utils import init_weights
 
 def deconv_layer(in_dim, out_dim):
     return nn.Sequential(

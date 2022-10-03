@@ -1,8 +1,9 @@
 import torch
 from torch import nn
+from utils import init_weights
 
 def init_weights(layer):
-    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d) :
+    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d):
         layer.weight.data.normal_(0.0, 0.02)
     elif isinstance(layer, nn.BatchNorm3d):
         layer.weight.data.normal_(1.0, 0.02)

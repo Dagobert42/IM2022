@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 from torch.autograd import Variable
 from torch.utils import data
 import pickle5 as pickle
@@ -37,3 +38,11 @@ def save_samples(samples, path, epoch):
         ax.axis('off')
     plt.savefig(path + '/sample_@epoch{}.png'.format(str(epoch)))
     plt.close()
+
+
+def init_weights(layer):
+    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d):
+        layer.weight.data.normal_(0.0, 0.02)
+    elif isinstance(layer, nn.BatchNorm3d):
+        layer.weight.data.normal_(1.0, 0.02)
+        layer.bias.data.zero_()
