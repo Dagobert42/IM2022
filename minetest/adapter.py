@@ -60,7 +60,9 @@ end)
         for x in range(len(structure)):
             for y in range(len(structure[x])):
                 for z in range(len(structure[x][y])):
-                    if structure[x][y][z] != 0:
+                    if structure[x][y][z] == 0:
+                        mt_name = 'air'
+                    else:
                         mc_id = structure[x][y][z] % 16
                         if printMode == 'segmentation':
                             mt_name = self.segment_dict[mc_id]
@@ -71,7 +73,7 @@ end)
                                 mt_name = 'default:stone'
                         else:
                             mt_name = 'default:stone'
-                        nodes.append({'x': x+dx, 'y': y+3+dy, 'z': z+dz, 'name': mt_name})
+                    nodes.append({'x': x+dx, 'y': y+3+dy, 'z': z+dz, 'name': mt_name})
 
         lua = ''
         for node in nodes:

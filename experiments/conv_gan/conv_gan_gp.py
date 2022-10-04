@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from utils import init_weights
+from experiments.conv_gan.utils import init_weights
 
 def deconv_layer(in_dim, out_dim, stride=2):
     return nn.Sequential(
