@@ -11,6 +11,18 @@ from max_log_d import *
 from w_gp import *
 from google.colab import files
 
+class ArtificialStructuresDataset(data.Dataset):
+    def __init__(self, data_path, device):
+        with open(data_path,'rb') as f:
+            # send data to GPU if possible
+            self.data = pickle.load(f)
+
+    def __getitem__(self, index):
+        return self.data[index].to(device)
+
+    def __len__(self):
+        return len(self.data)
+
 def start_training(
     generator: nn.Module,
     discriminator: nn.Module,

@@ -12,17 +12,12 @@ def latent_vector(batch_size, noise_dim):
     x = torch.FloatTensor(batch_size, noise_dim).normal_(0.0, 1.0).to(device)
     return Variable(x)
 
-class ArtificialStructuresDataset(data.Dataset):
-    def __init__(self, data_path, device):
-        with open(data_path,'rb') as f:
-            # send data to GPU if possible
-            self.data = pickle.load(f)
-
-    def __getitem__(self, index):
-        return self.data[index].to(device)
-
-    def __len__(self):
-        return len(self.data)
+def init_weights(layer):
+    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d):
+        layer.weight.data.normal_(0.0, 0.02)
+    elif isinstance(layer, nn.BatchNorm3d):
+        layer.weight.data.normal_(1.0, 0.02)
+        layer.bias.data.zero_()
 
 def save_samples(samples, path, epoch):
     plt.figure(figsize=(8, 4))
@@ -38,11 +33,3 @@ def save_samples(samples, path, epoch):
         ax.axis('off')
     plt.savefig(path + '/sample_@epoch{}.png'.format(str(epoch)))
     plt.close()
-
-
-def init_weights(layer):
-    if isinstance(layer, nn.ConvTranspose3d) or isinstance(layer, nn.Conv3d):
-        layer.weight.data.normal_(0.0, 0.02)
-    elif isinstance(layer, nn.BatchNorm3d):
-        layer.weight.data.normal_(1.0, 0.02)
-        layer.bias.data.zero_()
